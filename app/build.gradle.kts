@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.androidapiplayground"
+    namespace = "net.shehane.androidapiplayground"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.androidapiplayground"
+        applicationId = "net.shehane.androidapiplayground"
         minSdk = 29
         targetSdk = 35
         versionCode = 1

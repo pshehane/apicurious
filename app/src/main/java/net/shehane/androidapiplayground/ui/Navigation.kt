@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui
+package net.shehane.androidapiplayground.ui
 
 sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "API Curious")

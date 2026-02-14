@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui.theme
+package net.shehane.androidapiplayground.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

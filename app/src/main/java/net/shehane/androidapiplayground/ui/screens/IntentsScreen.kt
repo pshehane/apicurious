@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui.screens
+package net.shehane.androidapiplayground.ui.screens
 
 import android.Manifest
 import android.content.ContentValues
@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.androidapiplayground.ui.components.FeatureScaffold
+import net.shehane.androidapiplayground.ui.components.FeatureScaffold
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

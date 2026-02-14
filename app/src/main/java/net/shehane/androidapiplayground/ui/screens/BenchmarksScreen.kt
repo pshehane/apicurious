@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui.screens
+package net.shehane.androidapiplayground.ui.screens
 
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
@@ -32,7 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.androidapiplayground.ui.components.FeatureScaffold
+import net.shehane.androidapiplayground.ui.components.FeatureScaffold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

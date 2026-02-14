@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui.screens
+package net.shehane.androidapiplayground.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -50,7 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.example.androidapiplayground.ui.components.FeatureScaffold
+import net.shehane.androidapiplayground.ui.components.FeatureScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

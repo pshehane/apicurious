@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui.components
+package net.shehane.androidapiplayground.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

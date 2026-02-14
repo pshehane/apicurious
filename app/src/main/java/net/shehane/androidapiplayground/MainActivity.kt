@@ -1,4 +1,4 @@
-package com.example.androidapiplayground
+package net.shehane.androidapiplayground
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,14 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.androidapiplayground.ui.Screen
-import com.example.androidapiplayground.ui.screens.BenchmarksScreen
-import com.example.androidapiplayground.ui.screens.CamcorderProfileScreen
-import com.example.androidapiplayground.ui.screens.CameraFrameRatesScreen
-import com.example.androidapiplayground.ui.screens.CodecsAvailableScreen
-import com.example.androidapiplayground.ui.screens.HomeScreen
-import com.example.androidapiplayground.ui.screens.IntentsScreen
-import com.example.androidapiplayground.ui.theme.AppTheme
+import net.shehane.androidapiplayground.ui.Screen
+import net.shehane.androidapiplayground.ui.screens.BenchmarksScreen
+import net.shehane.androidapiplayground.ui.screens.CamcorderProfileScreen
+import net.shehane.androidapiplayground.ui.screens.CameraFrameRatesScreen
+import net.shehane.androidapiplayground.ui.screens.CodecsAvailableScreen
+import net.shehane.androidapiplayground.ui.screens.HomeScreen
+import net.shehane.androidapiplayground.ui.screens.IntentsScreen
+import net.shehane.androidapiplayground.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

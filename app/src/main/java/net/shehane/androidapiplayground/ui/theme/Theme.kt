@@ -1,4 +1,4 @@
-package com.example.androidapiplayground.ui.theme
+package net.shehane.androidapiplayground.ui.theme
 
 import android.app.Activity
 import android.os.Build
