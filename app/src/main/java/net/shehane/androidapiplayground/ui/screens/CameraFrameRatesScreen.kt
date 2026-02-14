@@ -12,8 +12,12 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.os.Handler
 import android.os.HandlerThread
+import android.hardware.camera2.params.OutputConfiguration
+import android.hardware.camera2.params.SessionConfiguration
+import android.os.Build
 import android.util.Range
 import android.view.Surface
+import java.util.concurrent.Executor
 import android.view.TextureView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -125,39 +130,67 @@ fun CameraFrameRatesScreen(
                             Range(selectedMinFps, selectedMaxFps)
                         )
 
-                        camera.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
-                            override fun onConfigured(session: CameraCaptureSession) {
-                                captureSession = session
-                                try {
-                                    session.setRepeatingRequest(
-                                        previewRequestBuilder.build(),
-                                        object : CameraCaptureSession.CaptureCallback() {
-                                            override fun onCaptureCompleted(
-                                                session: CameraCaptureSession,
-                                                request: CaptureRequest,
-                                                result: TotalCaptureResult
-                                            ) {
-                                                // Extract Frame Duration to calculate FPS roughly or trust metadata if valid
-                                                // Note: Real FPS calculation usually done by measuring time between callbacks.
-                                                // Here we can try to read metadata if available, but frame duration is more reliable for "actual"
-                                                // For "API Status" let's show what the camera *says* it's doing.
-                                                // But let's verify via timestamp diff for "Real"
-                                                // Simplified for now:
-                                                // val frameDuration = result.get(CaptureResult.SENSOR_FRAME_DURATION)
-                                            }
-                                        },
-                                        backgroundHandler
-                                    )
-                                    statusMessage = "Running: Range [$selectedMinFps, $selectedMaxFps]"
-                                } catch (e: Exception) {
-                                    statusMessage = "Error starting preview: ${e.message}"
-                                }
-                            }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            val executor = Executor { command -> backgroundHandler.post(command) }
+                            val sessionConfiguration = SessionConfiguration(
+                                SessionConfiguration.SESSION_REGULAR,
+                                listOf(OutputConfiguration(surface)),
+                                executor,
+                                object : CameraCaptureSession.StateCallback() {
+                                    override fun onConfigured(session: CameraCaptureSession) {
+                                        captureSession = session
+                                        try {
+                                            session.setRepeatingRequest(
+                                                previewRequestBuilder.build(),
+                                                object : CameraCaptureSession.CaptureCallback() {
+                                                    override fun onCaptureCompleted(
+                                                        session: CameraCaptureSession,
+                                                        request: CaptureRequest,
+                                                        result: TotalCaptureResult
+                                                    ) {}
+                                                },
+                                                backgroundHandler
+                                            )
+                                            statusMessage = "Running: Range [$selectedMinFps, $selectedMaxFps]"
+                                        } catch (e: Exception) {
+                                            statusMessage = "Error starting preview: ${e.message}"
+                                        }
+                                    }
 
-                            override fun onConfigureFailed(session: CameraCaptureSession) {
-                                statusMessage = "Configuration Failed"
-                            }
-                        }, backgroundHandler)
+                                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                                        statusMessage = "Configuration Failed"
+                                    }
+                                }
+                            )
+                            camera.createCaptureSession(sessionConfiguration)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            camera.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
+                                override fun onConfigured(session: CameraCaptureSession) {
+                                    captureSession = session
+                                    try {
+                                        session.setRepeatingRequest(
+                                            previewRequestBuilder.build(),
+                                            object : CameraCaptureSession.CaptureCallback() {
+                                                override fun onCaptureCompleted(
+                                                    session: CameraCaptureSession,
+                                                    request: CaptureRequest,
+                                                    result: TotalCaptureResult
+                                                ) {}
+                                            },
+                                            backgroundHandler
+                                        )
+                                        statusMessage = "Running: Range [$selectedMinFps, $selectedMaxFps]"
+                                    } catch (e: Exception) {
+                                        statusMessage = "Error starting preview: ${e.message}"
+                                    }
+                                }
+
+                                override fun onConfigureFailed(session: CameraCaptureSession) {
+                                    statusMessage = "Configuration Failed"
+                                }
+                            }, backgroundHandler)
+                        }
                     } catch (e: Exception) {
                         statusMessage = "Error: ${e.message}"
                     }
@@ -218,7 +251,7 @@ fun CameraFrameRatesScreen(
                             readOnly = true,
                             label = { Text("Min FPS") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = minExpanded) },
-                            modifier = Modifier.menuAnchor()
+                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                         )
                         ExposedDropdownMenu(
                             expanded = minExpanded,
@@ -252,7 +285,7 @@ fun CameraFrameRatesScreen(
                             readOnly = true,
                             label = { Text("Max FPS") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = maxExpanded) },
-                            modifier = Modifier.menuAnchor()
+                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                         )
                         ExposedDropdownMenu(
                             expanded = maxExpanded,

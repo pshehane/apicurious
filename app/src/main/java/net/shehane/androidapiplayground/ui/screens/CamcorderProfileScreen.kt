@@ -61,15 +61,33 @@ fun CamcorderProfileScreen(
                     )
 
                     qualities.forEach { (name, quality) ->
-                        if (CamcorderProfile.hasProfile(idInt, quality)) {
-                            // Using the newer getAll approach if available/applicable, but standard get is still common for single profile
-                            // For simplicity and broad support, strictly displaying the profile data
-                            val profile = CamcorderProfile.get(idInt, quality)
-                            sb.append("  Profile: $name\n")
-                            sb.append("    Format: ${profile.fileFormat}\n")
-                            sb.append("    Video: ${profile.videoCodec} | ${profile.videoFrameWidth}x${profile.videoFrameHeight} | ${profile.videoFrameRate}fps | ${profile.videoBitRate}bps\n")
-                            sb.append("    Audio: ${profile.audioCodec} | ${profile.audioSampleRate}Hz | ${profile.audioBitRate}bps | ${profile.audioChannels}ch\n")
-                            sb.append("    ----------------\n")
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                            if (CamcorderProfile.hasProfile(idInt, quality)) {
+                                val profiles = CamcorderProfile.getAll(cameraId, quality)
+                                if (profiles != null) {
+                                    sb.append("  Profile: $name\n")
+                                    sb.append("    Format: ${profiles.recommendedFileFormat}\n")
+                                    profiles.videoProfiles.forEach { video ->
+                                        sb.append("    Video: ${getVideoCodecName(video.codec)} | ${video.width}x${video.height} | ${video.frameRate}fps | ${video.bitrate}bps\n")
+                                    }
+                                    profiles.audioProfiles.forEach { audio ->
+                                        sb.append("    Audio: ${getAudioCodecName(audio.codec)} | ${audio.sampleRate}Hz | ${audio.bitrate}bps | ${audio.channels}ch\n")
+                                    }
+                                    sb.append("    ----------------\n")
+                                }
+                            }
+                        } else {
+                            if (CamcorderProfile.hasProfile(idInt, quality)) {
+                                // Using the newer getAll approach if available/applicable, but standard get is still common for single profile
+                                // For simplicity and broad support, strictly displaying the profile data
+                                @Suppress("DEPRECATION")
+                                val profile = CamcorderProfile.get(idInt, quality)
+                                sb.append("  Profile: $name\n")
+                                sb.append("    Format: ${profile.fileFormat}\n")
+                                sb.append("    Video: ${getVideoCodecName(profile.videoCodec)} | ${profile.videoFrameWidth}x${profile.videoFrameHeight} | ${profile.videoFrameRate}fps | ${profile.videoBitRate}bps\n")
+                                sb.append("    Audio: ${getAudioCodecName(profile.audioCodec)} | ${profile.audioSampleRate}Hz | ${profile.audioBitRate}bps | ${profile.audioChannels}ch\n")
+                                sb.append("    ----------------\n")
+                            }
                         }
                     }
                 } else {
@@ -106,4 +124,31 @@ fun CamcorderProfileScreen(
             }
         }
     )
+}
+
+fun getVideoCodecName(codec: Int): String {
+    return when (codec) {
+        android.media.MediaRecorder.VideoEncoder.H263 -> "H.263"
+        android.media.MediaRecorder.VideoEncoder.H264 -> "H.264"
+        android.media.MediaRecorder.VideoEncoder.MPEG_4_SP -> "MPEG-4 SP"
+        android.media.MediaRecorder.VideoEncoder.VP8 -> "VP8"
+        android.media.MediaRecorder.VideoEncoder.HEVC -> "HEVC"
+        android.media.MediaRecorder.VideoEncoder.VP9 -> "VP9"
+        android.media.MediaRecorder.VideoEncoder.DOLBY_VISION -> "Dolby Vision"
+        android.media.MediaRecorder.VideoEncoder.AV1 -> "AV1"
+        else -> "Unknown ($codec)"
+    }
+}
+
+fun getAudioCodecName(codec: Int): String {
+    return when (codec) {
+        android.media.MediaRecorder.AudioEncoder.AMR_NB -> "AMR-NB"
+        android.media.MediaRecorder.AudioEncoder.AMR_WB -> "AMR-WB"
+        android.media.MediaRecorder.AudioEncoder.AAC -> "AAC"
+        android.media.MediaRecorder.AudioEncoder.HE_AAC -> "HE-AAC"
+        android.media.MediaRecorder.AudioEncoder.AAC_ELD -> "AAC-ELD"
+        android.media.MediaRecorder.AudioEncoder.VORBIS -> "Vorbis"
+        android.media.MediaRecorder.AudioEncoder.OPUS -> "Opus"
+        else -> "Unknown ($codec)"
+    }
 }
