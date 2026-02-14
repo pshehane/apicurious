@@ -1,0 +1,42 @@
+# --- IDE Specific ---
+.idea/
+*.iml
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+cmake-build-*/
+
+# --- Build Outputs ---
+# We ignore all build folders, but keep the root 'build' if it contains 
+# important scripts (rare, but possible). Usually, just ignore all.
+**/build/
+
+# --- Android Studio / IntelliJ ---
+# Exclude the shelf and workspace files
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/assetWizardSettings.xml
+.idea/navEditor.xml
+
+# --- Signing Files ---
+# NEVER check in your keystores or credentials
+*.jks
+*.keystore
+*.p12
+google-services.json
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+
+# --- Log files ---
+*.log
+
+# --- Native / NDK ---
+obj/
+libs/
+
