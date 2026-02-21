@@ -33,14 +33,99 @@ import net.shehane.androidapiplayground.ui.components.FeatureScaffold
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.media.MediaMetadataRetriever
+import android.media.MediaExtractor
+import android.provider.OpenableColumns
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
 
 @Composable
 fun IntentsScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var lastCapturedUri by remember { mutableStateOf<Uri?>(null) }
     var statusMessage by remember { mutableStateOf("Ready to capture media") }
+
+    suspend fun extractMediaInfo(uri: Uri): String = withContext(Dispatchers.IO) {
+        val sb = StringBuilder()
+        sb.append("Picked Media: $uri\n\n")
+
+        // 1. File size / name from DocumentFile / Cursor
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (nameIndex >= 0) sb.append("Name: ${cursor.getString(nameIndex)}\n")
+                if (sizeIndex >= 0) {
+                    val sizeBytes = cursor.getLong(sizeIndex)
+                    sb.append("Size: ${sizeBytes / 1024} KB\n")
+                }
+            }
+        }
+
+        // 2. MediaMetadataRetriever
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, uri)
+            val hasVideo = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO)
+            val hasAudio = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
+            
+            sb.append("Type: ${if (hasVideo == "yes") "Video" else if (hasAudio == "yes") "Audio" else "Unknown"}\n")
+            
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { w ->
+                val h = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                sb.append("Resolution: ${w}x${h}\n")
+            }
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.let { 
+                sb.append("Bitrate: ${it.toLong() / 1000} kbps\n") 
+            }
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.let { 
+                sb.append("Duration: ${it.toLong() / 1000} seconds\n") 
+            }
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)?.let { 
+                sb.append("MimeType (Retriever): $it\n") 
+            }
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { 
+                sb.append("Date: $it\n") 
+            }
+        } catch (e: Exception) {
+            sb.append("Metadata Retriever Error: ${e.message}\n")
+        } finally {
+            retriever.release()
+        }
+
+        // 3. MediaExtractor (for specific codec formats string)
+        val extractor = MediaExtractor()
+        try {
+            extractor.setDataSource(context, uri, null)
+            sb.append("\nTracks:\n")
+            for (i in 0 until extractor.trackCount) {
+                val format = extractor.getTrackFormat(i)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: "unknown"
+                val typeDetails = if (mime.startsWith("video/")) {
+                    val w = if (format.containsKey(android.media.MediaFormat.KEY_WIDTH)) format.getInteger(android.media.MediaFormat.KEY_WIDTH) else 0
+                    val h = if (format.containsKey(android.media.MediaFormat.KEY_HEIGHT)) format.getInteger(android.media.MediaFormat.KEY_HEIGHT) else 0
+                    "${w}x${h}"
+                } else if (mime.startsWith("audio/")) {
+                    val sampleRate = if (format.containsKey(android.media.MediaFormat.KEY_SAMPLE_RATE)) format.getInteger(android.media.MediaFormat.KEY_SAMPLE_RATE) else 0
+                    val channels = if (format.containsKey(android.media.MediaFormat.KEY_CHANNEL_COUNT)) format.getInteger(android.media.MediaFormat.KEY_CHANNEL_COUNT) else 0
+                    "${sampleRate}Hz, ${channels}ch"
+                } else ""
+                
+                sb.append("- Track $i: $mime ($typeDetails)\n")
+            }
+        } catch (e: Exception) {
+            sb.append("Extractor Error: ${e.message}\n")
+        } finally {
+            extractor.release()
+        }
+
+        sb.toString()
+    }
 
     // Permissions
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -95,7 +180,9 @@ fun IntentsScreen(
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             lastCapturedUri = tempImageUri
-            statusMessage = "Image captured to Gallery: ${lastCapturedUri?.lastPathSegment}"
+            scope.launch {
+                lastCapturedUri?.let { statusMessage = extractMediaInfo(it) }
+            }
             Toast.makeText(context, "Image Saved directly to Gallery", Toast.LENGTH_SHORT).show()
         } else {
             statusMessage = "Image capture failed or cancelled"
@@ -111,7 +198,9 @@ fun IntentsScreen(
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             lastCapturedUri = tempVideoUri
-            statusMessage = "Video captured to Gallery: ${lastCapturedUri?.lastPathSegment}"
+            scope.launch {
+                lastCapturedUri?.let { statusMessage = extractMediaInfo(it) }
+            }
             Toast.makeText(context, "Video Saved directly to Gallery", Toast.LENGTH_SHORT).show()
         } else {
             statusMessage = "Video capture failed or cancelled"
@@ -127,7 +216,9 @@ fun IntentsScreen(
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
                 lastCapturedUri = uri
-                statusMessage = "Audio recorded: $uri"
+                scope.launch {
+                    statusMessage = extractMediaInfo(uri)
+                }
                 Toast.makeText(context, "Audio Saved", Toast.LENGTH_SHORT).show()
             }
         } else {
@@ -141,7 +232,9 @@ fun IntentsScreen(
     ) { uri ->
         if (uri != null) {
             lastCapturedUri = uri
-            statusMessage = "Picked Media: $uri"
+            scope.launch {
+                statusMessage = extractMediaInfo(uri)
+            }
             Toast.makeText(context, "Media Picked", Toast.LENGTH_SHORT).show()
         } else {
             statusMessage = "No media picked"

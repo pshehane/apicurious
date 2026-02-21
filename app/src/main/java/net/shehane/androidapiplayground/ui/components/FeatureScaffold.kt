@@ -41,11 +41,10 @@ fun FeatureScaffold(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars)
     ) {
-        // Top 1/4: Controls
+        // Controls
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(16.dp)
         ) {
@@ -77,11 +76,11 @@ fun FeatureScaffold(
             }
         }
 
-        // Bottom 3/4: Output / Viewfinder
+        // Output / Viewfinder
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(3f)
+                .weight(1f)
                 .background(MaterialTheme.colorScheme.background)
         ) {
             outputContent()
